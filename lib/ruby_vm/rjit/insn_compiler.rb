@@ -3178,6 +3178,23 @@ module RubyVM::RJIT
       return true
     end
 
+    def jit_rb_ary_not_empty_p(jit, ctx, asm, argc, _known_recv_class)
+      array_reg = :rax
+      asm.mov(array_reg, ctx.stack_pop(1))
+      jit_array_len(asm, array_reg, :rcx)
+
+      asm.test(:rcx, :rcx)
+      asm.mov(:rax, Qfalse)
+      asm.mov(:rcx, Qtrue)
+      asm.cmovg(:rax, :rcx)
+
+      out_opnd = ctx.stack_push(Type::UnknownImm)
+      asm.mov(out_opnd, :rax)
+
+      return true
+    end
+
+
     # @param jit [RubyVM::RJIT::JITState]
     # @param ctx [RubyVM::RJIT::Context]
     # @param asm [RubyVM::RJIT::Assembler]

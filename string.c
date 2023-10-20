@@ -2129,6 +2129,25 @@ rb_str_empty(VALUE str)
 
 /*
  *  call-seq:
+ *    not_empty? -> true or false
+ *
+ *  Returns +true+ if the length of +self+ is greater than zero,
+ *  +false+ otherwise:
+ *
+ *    "hello".not_empty? # => true
+ *    " ".not_empty? # => true
+ *    "".not_empty? # => false
+ *
+ */
+
+static VALUE
+rb_str_not_empty(VALUE str)
+{
+    return RBOOL(RSTRING_LEN(str) > 0);
+}
+
+/*
+ *  call-seq:
  *    string + other_string -> new_string
  *
  *  Returns a new \String containing +other_string+ concatenated to +self+:
@@ -11729,6 +11748,21 @@ sym_empty(VALUE sym)
 
 /*
  *  call-seq:
+ *    not_empty? -> true or false
+ *
+ *  Returns +true+ if +self+ is not <tt>:''</tt>, +false+ otherwise.
+ *
+ */
+
+static VALUE
+sym_not_empty(VALUE sym)
+{
+    return rb_str_not_empty(rb_sym2str(sym));
+}
+
+
+/*
+ *  call-seq:
  *    upcase(*options) -> symbol
  *
  *  Equivalent to <tt>sym.to_s.upcase.to_sym</tt>.
@@ -11951,6 +11985,7 @@ Init_String(void)
     rb_define_method(rb_cString, "size", rb_str_length, 0);
     rb_define_method(rb_cString, "bytesize", rb_str_bytesize, 0);
     rb_define_method(rb_cString, "empty?", rb_str_empty, 0);
+    rb_define_method(rb_cString, "not_empty?", rb_str_not_empty, 0);
     rb_define_method(rb_cString, "=~", rb_str_match, 1);
     rb_define_method(rb_cString, "match", rb_str_match_m, -1);
     rb_define_method(rb_cString, "match?", rb_str_match_m_p, -1);
@@ -12119,6 +12154,7 @@ Init_String(void)
     rb_define_method(rb_cSymbol, "length", sym_length, 0);
     rb_define_method(rb_cSymbol, "size", sym_length, 0);
     rb_define_method(rb_cSymbol, "empty?", sym_empty, 0);
+    rb_define_method(rb_cSymbol, "not_empty?", sym_not_empty, 0);
     rb_define_method(rb_cSymbol, "match", sym_match_m, -1);
     rb_define_method(rb_cSymbol, "match?", sym_match_m_p, -1);
 

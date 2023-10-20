@@ -4804,6 +4804,34 @@ fn jit_rb_str_empty_p(
     return true;
 }
 
+// Codegen for rb_str_not_empty_p()
+fn jit_rb_str_not_empty_p(
+    _jit: &mut JITState,
+    asm: &mut Assembler,
+    _ocb: &mut OutlinedCb,
+    _ci: *const rb_callinfo,
+    _cme: *const rb_callable_method_entry_t,
+    _block: Option<BlockHandler>,
+    _argc: i32,
+    _known_recv_class: *const VALUE,
+) -> bool {
+    let recv_opnd = asm.stack_pop(1);
+
+    asm_comment!(asm, "get string length");
+    let str_len_opnd = Opnd::mem(
+        std::os::raw::c_long::BITS as u8,
+        asm.load(recv_opnd),
+        RUBY_OFFSET_RSTRING_LEN as i32,
+    );
+
+    asm.cmp(str_len_opnd, Opnd::UImm(0));
+    let string_empty = asm.csel_g(Qfalse.into(), Qtrue.into());
+    let out_opnd = asm.stack_push(Type::UnknownImm);
+    asm.mov(out_opnd, string_empty);
+
+    return true;
+}
+
 // Codegen for rb_str_concat() -- *not* String#concat
 // Frequently strings are concatenated using "out_str << next_str".
 // This is common in Erb and similar templating languages.
@@ -4894,6 +4922,30 @@ fn jit_rb_ary_empty_p(
 
     asm.test(len_opnd, len_opnd);
     let bool_val = asm.csel_z(Qtrue.into(), Qfalse.into());
+
+    let out_opnd = asm.stack_push(Type::UnknownImm);
+    asm.store(out_opnd, bool_val);
+
+    return true;
+}
+
+// Codegen for rb_ary_not_empty_p()
+fn jit_rb_ary_not_empty_p(
+    _jit: &mut JITState,
+    asm: &mut Assembler,
+    _ocb: &mut OutlinedCb,
+    _ci: *const rb_callinfo,
+    _cme: *const rb_callable_method_entry_t,
+    _block: Option<BlockHandler>,
+    _argc: i32,
+    _known_recv_class: *const VALUE,
+) -> bool {
+    let array_opnd = asm.stack_pop(1);
+    let array_reg = asm.load(array_opnd);
+    let len_opnd = get_array_len(asm, array_reg);
+
+    asm.test(len_opnd, Opnd::Imm(0));
+    let bool_val = asm.csel_g(Qtrue.into(), Qfalse.into());
 
     let out_opnd = asm.stack_push(Type::UnknownImm);
     asm.store(out_opnd, bool_val);
@@ -8792,6 +8844,7 @@ impl CodegenGlobals {
 
             // rb_str_to_s() methods in string.c
             self.yjit_reg_method(rb_cString, "empty?", jit_rb_str_empty_p);
+            self.yjit_reg_method(rb_cString, "not_empty?", jit_rb_str_not_empty_p);
             self.yjit_reg_method(rb_cString, "to_s", jit_rb_str_to_s);
             self.yjit_reg_method(rb_cString, "to_str", jit_rb_str_to_s);
             self.yjit_reg_method(rb_cString, "bytesize", jit_rb_str_bytesize);
@@ -8801,6 +8854,7 @@ impl CodegenGlobals {
 
             // rb_ary_empty_p() method in array.c
             self.yjit_reg_method(rb_cArray, "empty?", jit_rb_ary_empty_p);
+            self.yjit_reg_method(rb_cArray, "not_empty?", jit_rb_ary_not_empty_p);
             self.yjit_reg_method(rb_cArray, "<<", jit_rb_ary_push);
 
             self.yjit_reg_method(rb_mKernel, "respond_to?", jit_obj_respond_to);

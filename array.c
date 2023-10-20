@@ -2682,6 +2682,20 @@ rb_ary_empty_p(VALUE ary)
     return RBOOL(RARRAY_LEN(ary) == 0);
 }
 
+/*
+ * call-seq:
+ *  array.not_empty? -> true or false
+ * 
+ * Returns +true+ if the count of elements in +self+ is greater
+ * than zero, +false+ otherwise.
+ */
+
+static VALUE
+rb_ary_not_empty_p(VALUE ary)
+{
+    return RBOOL(RARRAY_LEN(ary) > 0);
+}
+
 VALUE
 rb_ary_dup(VALUE ary)
 {
@@ -8646,6 +8660,7 @@ Init_Array(void)
     rb_define_method(rb_cArray, "length", rb_ary_length, 0);
     rb_define_method(rb_cArray, "size", rb_ary_length, 0);
     rb_define_method(rb_cArray, "empty?", rb_ary_empty_p, 0);
+    rb_define_method(rb_cArray, "not_empty?", rb_ary_not_empty_p, 0);
     rb_define_method(rb_cArray, "find_index", rb_ary_index, -1);
     rb_define_method(rb_cArray, "index", rb_ary_index, -1);
     rb_define_method(rb_cArray, "rindex", rb_ary_rindex, -1);
